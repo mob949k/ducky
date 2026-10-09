@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<title>Ducky</title>
+<link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <path id="foot" d="M20 37C17.5 37 11 22 6.5 12.5C5.6 10.4 7.4 8.6 9.3 9.9L14.3 13.6Q16.5 8 18.3 4.2C19 2.6 21 2.6 21.7 4.2Q23.5 8 25.7 13.6L30.7 9.9C32.6 8.6 34.4 10.4 33.5 12.5C29 22 22.5 37 20 37Z" />
+    </defs>
+  </svg>
+
+  <main class="app quiet" id="app">
+    <header class="hero">
+      <svg class="prints" aria-hidden="true">
+        <defs>
+          <pattern id="trail" width="110" height="120" patternUnits="userSpaceOnUse" patternTransform="rotate(-28)">
+            <use href="#foot" transform="translate(12 62) scale(.6) rotate(-8 20 20)" />
+            <use href="#foot" transform="translate(44 2) scale(.6) rotate(8 20 20)" />
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#trail)" />
+      </svg>
+      <div class="bar">
+        <div>
+          <h1>Ducky</h1>
+          <span class="site" id="site">esta página</span>
+        </div>
+        <button class="round" id="reset" title="Volver a 100 %" aria-label="Volver a 100 %">
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+            <path d="M4 12a8 8 0 1 0 2.4-5.7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+            <path d="M4 3.5v4.2h4.2" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="stage">
+        <div class="pulse" id="pulse"></div>
+        <img class="duck" id="duck" src="duck.png" alt="" width="150" height="150" />
+      </div>
+
+    </header>
+
+    <section class="sheet">
+      <div class="stepper">
+        <button class="step" id="down" aria-label="Bajar 25 %">
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 12h12" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
+        </button>
+        <output class="value" id="value">100<small>%</small></output>
+        <button class="step" id="up" aria-label="Subir 25 %">
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 12h12M12 6v12" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+
+      <div class="track">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/></svg>
+        <input type="range" id="slider" min="0" max="600" step="5" value="100" aria-label="Volumen" />
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9.5h3.5L11 5.5v13l-4.5-4H3z" fill="currentColor"/><path d="M14.5 9a4 4 0 0 1 0 6M17 6.5a7.5 7.5 0 0 1 0 11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </div>
+
+      <div class="chips" role="group" aria-label="Niveles rápidos">
+        <button class="chip" data-val="100">100</button>
+        <button class="chip" data-val="200">200</button>
+        <button class="chip" data-val="300">300</button>
+        <button class="chip" data-val="600">600</button>
+      </div>
+
+      <div class="toggles">
+        <button class="toggle" id="limiter" aria-pressed="true" title="Evita que el audio se distorsione al subirlo">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5 5 6v5.5c0 4.3 3 7.6 7 9 4-1.4 7-4.7 7-9V6z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+          Limitador
+        </button>
+        <button class="toggle" id="boost" aria-pressed="false" title="+8 dB en los graves">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12c2-6 4-6 6 0s4 6 6 0 4-6 6 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          Graves
+        </button>
+      </div>
+
+      <p class="note" id="note" hidden></p>
+    </section>
+  </main>
+
+  <script src="popup.js"></script>
+</body>
+</html>

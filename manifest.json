@@ -1,0 +1,51 @@
+{
+  "manifest_version": 3,
+  "name": "Ducky — Volumen Extra",
+  "short_name": "Ducky",
+  "version": "3.1",
+  "description": "Sube el audio de cualquier video o página hasta 600 %, con limitador anti-distorsión, refuerzo de graves y memoria por sitio.",
+  "permissions": ["storage", "activeTab"],
+  "host_permissions": ["<all_urls>"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_start",
+      "all_frames": true,
+      "match_about_blank": true
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Ducky",
+    "default_icon": {
+      "16": "icon16.png",
+      "32": "icon32.png",
+      "48": "icon48.png",
+      "128": "icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icon16.png",
+    "32": "icon32.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  },
+  "commands": {
+    "volume-up": {
+      "suggested_key": { "default": "Alt+Shift+Up" },
+      "description": "Subir 25 %"
+    },
+    "volume-down": {
+      "suggested_key": { "default": "Alt+Shift+Down" },
+      "description": "Bajar 25 %"
+    },
+    "volume-reset": {
+      "suggested_key": { "default": "Alt+Shift+0" },
+      "description": "Volver a 100 %"
+    }
+  }
+}
