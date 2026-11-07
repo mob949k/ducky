@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Ducky settings</title>
+<link rel="stylesheet" href="options.css" />
+</head>
+<body>
+  <header class="top">
+    <div class="wrap">
+      <img src="img/duck-hero.webp" alt="" width="74" height="80" />
+      <div>
+        <h1>Ducky settings</h1>
+        <p>Everything here stays in your browser.</p>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="card" id="pin-card" hidden>
+      <div class="row">
+        <div>
+          <h2>One volume on every site</h2>
+          <p id="pin-text"></p>
+        </div>
+        <button class="btn" id="unpin">Go back to per-site</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="row head">
+        <div>
+          <h2>Saved sites</h2>
+          <p>Ducky remembers the volume you choose on each site.</p>
+        </div>
+        <button class="btn ghost" id="clear" hidden>Forget all</button>
+      </div>
+      <ul class="sites" id="sites"></ul>
+      <p class="empty" id="empty" hidden>No saved sites yet. Open any site, click the duck and move the slider.</p>
+    </section>
+
+    <section class="card">
+      <div class="row">
+        <div>
+          <h2>Keyboard shortcuts</h2>
+          <p><kbd>Alt</kbd> <kbd>Shift</kbd> <kbd>↑</kbd> up 25% · <kbd>Alt</kbd> <kbd>Shift</kbd> <kbd>↓</kbd> down 25% · <kbd>Alt</kbd> <kbd>Shift</kbd> <kbd>0</kbd> reset</p>
+        </div>
+        <button class="btn" id="shortcuts">Change</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="options.js"></script>
+</body>
+</html>

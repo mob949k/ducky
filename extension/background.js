@@ -1,4 +1,4 @@
-// background.js — Ducky 3.3
+// background.js — Ducky 3.5
 // Insignia con el porcentaje, atajos de teclado y permiso CORS temporal
 // para amplificar videos servidos desde otro dominio.
 
@@ -106,8 +106,8 @@ async function handleCors(msg, sender) {
   const site = hostOf(tab.url || "");
   if (!site) return false;
   const key = `site:${site}`;
-  const data = await chrome.storage.local.get(key);
-  const s = { ...DEFAULTS, ...(data[key] || {}) };
+  const data = await chrome.storage.local.get([key, "pinned"]);
+  const s = { ...DEFAULTS, ...(data.pinned || data[key] || {}) };
   if (!(s.gain > 1.005 || s.boost > 0)) return false;
 
   let origin;
@@ -188,8 +188,10 @@ chrome.commands.onCommand.addListener(async (command) => {
     const host = hostOf(tab.url);
     if (!host) return;
 
-    const key = `site:${host}`;
-    const data = await chrome.storage.local.get(key);
+    // Con el pin activo, los atajos cambian el volumen de todos los sitios.
+    const siteKey = `site:${host}`;
+    const data = await chrome.storage.local.get([siteKey, "pinned"]);
+    const key = data.pinned ? "pinned" : siteKey;
     const current = { ...DEFAULTS, ...(data[key] || {}) };
     let gain = current.gain;
 

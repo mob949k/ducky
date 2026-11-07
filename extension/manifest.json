@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Ducky — Volume Booster",
   "short_name": "Ducky",
-  "version": "3.4",
+  "version": "3.5",
   "description": "Boost any video or tab up to 600%, with a distortion limiter, bass boost and per-site memory.",
   "permissions": [
     "storage",
@@ -81,5 +81,9 @@
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'none'; base-uri 'none'"
   },
-  "minimum_chrome_version": "119"
+  "minimum_chrome_version": "119",
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  }
 }

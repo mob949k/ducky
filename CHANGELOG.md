@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.5
+- Redesigned popup: illustrated header, bigger controls and clearer buttons.
+- New **Pin** button: use one volume on every site, and go back to per-site volumes anytime.
+- New **Settings** page: see and forget saved sites, turn off the pin, change shortcuts.
+- "Reload the page" notice now has a button that reloads the tab for you.
+- Keyboard shortcuts follow the pin when it's on.
+
 ## 3.4
 - The whole interface is now in English.
 - Stricter security policy for the popup (no inline code, no plugins).

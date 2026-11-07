@@ -1,4 +1,4 @@
-// content.js — Ducky 3.3 · puente entre la página y la extensión
+// content.js — Ducky 3.5 · puente entre la página y la extensión
 // El audio lo maneja engine.js dentro de la página. Este script lee los
 // ajustes guardados, se los pasa al motor, reenvía el medidor al popup y
 // pide a background.js el permiso CORS para videos de otro dominio.
@@ -126,14 +126,25 @@
   }
 
   try {
-    chrome.storage.local.get(KEY, (data) => {
+    // "pinned" (mismo volumen en todos los sitios) tiene prioridad sobre
+    // el ajuste de cada sitio.
+    let site = null;
+    let pin = null;
+    const refresh = () => setSettings(pin || site);
+
+    chrome.storage.local.get([KEY, "pinned"], (data) => {
       if (chrome.runtime.lastError || !data) return;
-      setSettings(data[KEY]);
+      site = data[KEY] || null;
+      pin = data.pinned || null;
+      refresh();
     });
 
     chrome.storage.onChanged.addListener((changes, area) => {
-      if (area !== "local" || !changes[KEY] || !alive()) return;
-      setSettings(changes[KEY].newValue);
+      if (area !== "local" || !alive()) return;
+      if (!changes[KEY] && !changes.pinned) return;
+      if (changes[KEY]) site = changes[KEY].newValue || null;
+      if (changes.pinned) pin = changes.pinned.newValue || null;
+      refresh();
     });
 
     chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {

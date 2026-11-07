@@ -34,11 +34,12 @@ Ducky fixes that in one click — and keeps it sounding clean.
 | 🎚️ **Precise control** | Slider, ± buttons in 25% steps, or one-tap presets: 100 · 200 · 300 · 600. |
 | 🎵 **Bass Boost** | +8 dB on the low end for tiny laptop speakers. |
 | 🧠 **Remembers each site** | YouTube at 250%, your podcast site at 150%. Set it once. |
+| 📌 **Pin** | Want the same volume everywhere? Pin it. Unpin to go back to per-site. |
 | ⌨️ **Shortcuts** | Change the volume without opening anything. |
 | 🪶 **Light** | Does nothing until you boost, ignores muted previews, and sleeps when nothing is playing. |
 
 <p align="center">
-  <img src="docs/popup.png" width="520" alt="Ducky popup at 100% and boosting at 325% with bass boost" />
+  <img src="docs/popup.png" width="520" alt="Ducky popup boosting at 325% with bass boost, and pinned at 200% on every site" />
 </p>
 
 ## Works where your audio is
@@ -67,7 +68,7 @@ Click the duck in your toolbar:
 - Drag the slider (or scroll on it), use **−** / **+**, or tap a preset.
 - **Limiter** keeps loud audio clean. It's on by default.
 - **Bass Boost** adds weight to small speakers.
-- The round button resets to 100%.
+- 📌 **Pin** uses the current volume on every site. ⚙️ **Settings** lists your saved sites and shortcuts. ↻ resets to 100%.
 - The orange circle behind the duck pulses with the sound — red means it's clipping.
 
 | Action | Shortcut |
@@ -119,7 +120,9 @@ ducky/
 │   ├── content.js        bridge between the engine and the extension
 │   ├── background.js     badge, shortcuts, cross-site permissions
 │   ├── popup.html / .css / .js
-│   ├── duck.png, icon*.png
+│   ├── options.html / .css / .js   settings page
+│   ├── img/              header background and duck
+│   ├── icon*.png
 │   └── fonts/
 ├── docs/                 images for this page
 ├── .github/workflows/    builds ducky.zip for each release

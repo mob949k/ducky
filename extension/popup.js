@@ -1,4 +1,4 @@
-// popup.js — Ducky 3.4
+// popup.js — Ducky 3.5
 
 const DEFAULTS = { gain: 1, boost: 0, limiter: true };
 const BOOST_DB = 8;
@@ -21,8 +21,16 @@ const el = {
   limiter: $("limiter"),
   boost: $("boost"),
   reset: $("reset"),
+  pin: $("pin"),
+  settings: $("settings"),
+  pitch: $("pitch"),
   note: $("note"),
+  noteText: $("note-text"),
+  reload: $("reload"),
 };
+
+const PIN_KEY = "pinned"; // mismo volumen en todos los sitios
+let pinned = false;
 
 let tabId = null;
 let siteKey = null;
@@ -60,6 +68,12 @@ function render() {
 
   el.chips.forEach((b) => b.classList.toggle("on", Number(b.dataset.val) === pct));
   el.limiter.setAttribute("aria-pressed", String(!!settings.limiter));
+  el.pin.setAttribute("aria-pressed", String(pinned));
+  el.pin.title = pinned ? "Using one volume on every site. Click to go back to per-site" : "Use this volume on every site";
+  el.pitch.replaceChildren(
+    pinned ? "Same volume on " : "Boost the volume of your browser up to ",
+    Object.assign(document.createElement("b"), { textContent: pinned ? "every site" : "600%" })
+  );
   el.boost.setAttribute("aria-pressed", String(settings.boost > 0));
 
   // El pato ladea el sombrero según cuánto subes.
@@ -94,24 +108,30 @@ function renderLevel() {
 // Solo se muestra un aviso cuando hay algo que hacer.
 function note(total, ok, failed) {
   let text = "";
+  let canReload = false;
   const amped = settings.gain > 1 || settings.boost > 0;
 
   if (!supported) text = "Chrome doesn't allow extensions on this page.";
-  else if (!reachable) text = "Reload the page to turn on Ducky.";
+  else if (!reachable) {
+    text = "Reload the page to activate Ducky.";
+    canReload = true;
+  }
   else if (amped && failed > 0) text = "A video from another site can't be boosted.";
   else if (amped && total > 0 && ok === 0) text = "Press play to boost.";
 
   el.note.hidden = !text;
-  if (el.note.textContent !== text) el.note.textContent = text;
+  el.reload.hidden = !canReload;
+  if (el.noteText.textContent !== text) el.noteText.textContent = text;
 }
 
 // ---------------------------------------------------------------- guardado
 
 function save() {
   if (!siteKey) return;
+  const key = pinned ? PIN_KEY : siteKey;
   clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
-    chrome.storage.local.set({ [siteKey]: { ...settings } }).catch(() => {});
+    chrome.storage.local.set({ [key]: { ...settings } }).catch(() => {});
   }, 60);
 }
 
@@ -159,6 +179,34 @@ el.reset.addEventListener("click", () => {
   settings = { ...DEFAULTS };
   render();
   save();
+});
+
+// Pin: usar este volumen en todos los sitios (o volver al de cada sitio).
+el.pin.addEventListener("click", async () => {
+  if (!siteKey) return;
+  clearTimeout(saveTimer);
+  try {
+    if (pinned) {
+      pinned = false;
+      await chrome.storage.local.remove(PIN_KEY);
+      const data = await chrome.storage.local.get(siteKey);
+      settings = clean(data[siteKey]);
+    } else {
+      pinned = true;
+      await chrome.storage.local.set({ [PIN_KEY]: { ...settings } });
+    }
+  } catch (e) {}
+  render();
+});
+
+el.settings.addEventListener("click", () => {
+  chrome.runtime.openOptionsPage();
+  window.close();
+});
+
+el.reload.addEventListener("click", () => {
+  if (tabId !== null) chrome.tabs.reload(tabId);
+  window.close();
 });
 
 // ---------------------------------------------------------------- medidor
@@ -216,11 +264,13 @@ chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
   if (!supported) {
     probed = true;
     note(0, 0, 0);
+    render();
     return;
   }
 
-  chrome.storage.local.get(siteKey, (data) => {
-    settings = clean(data && data[siteKey]);
+  chrome.storage.local.get([siteKey, PIN_KEY], (data) => {
+    pinned = !!(data && data[PIN_KEY]);
+    settings = clean(data && (pinned ? data[PIN_KEY] : data[siteKey]));
     render();
   });
 

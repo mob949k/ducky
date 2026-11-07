@@ -1,0 +1,34 @@
+@font-face { font-family: "Bricolage"; src: url("fonts/bricolage-grotesque-latin-800-normal.woff2") format("woff2"); font-weight: 800; }
+@font-face { font-family: "Bricolage"; src: url("fonts/bricolage-grotesque-latin-600-normal.woff2") format("woff2"); font-weight: 600; }
+@font-face { font-family: "Onest"; src: url("fonts/onest-latin-500-normal.woff2") format("woff2"); font-weight: 500; }
+@font-face { font-family: "Onest"; src: url("fonts/onest-latin-600-normal.woff2") format("woff2"); font-weight: 600; }
+
+:root {
+  --night: #1b233e; --cream: #fcf6ee; --sand: #f3e8da; --sand-2: #e8dccb;
+  --ink: #1e2539; --soft: #7d7a8c; --orange: #f27c34;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--cream); color: var(--ink); font: 500 14px/1.5 "Onest", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+.wrap { max-width: 640px; margin: 0 auto; padding: 0 20px; }
+.top { background: var(--night) url("img/header-bg.webp") center 70% / cover; color: var(--cream); padding: 28px 0 22px; margin-bottom: 24px; }
+.top .wrap { display: flex; align-items: center; gap: 16px; }
+h1 { margin: 0; font: 800 28px/1.1 "Bricolage", sans-serif; letter-spacing: -0.02em; }
+.top p { margin: 4px 0 0; opacity: 0.8; }
+h2 { margin: 0; font: 600 18px/1.2 "Bricolage", sans-serif; }
+.card { background: #fff; border-radius: 20px; padding: 18px 20px; margin-bottom: 16px; box-shadow: 0 1px 0 var(--sand-2); }
+.card p { margin: 4px 0 0; color: var(--soft); }
+.card[hidden], .btn[hidden], .empty[hidden] { display: none; }
+.row { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.btn { flex: none; border: 0; border-radius: 999px; padding: 9px 16px; background: var(--ink); color: var(--cream); font: 600 13px "Onest", sans-serif; cursor: pointer; }
+.btn.ghost { background: var(--sand); color: var(--ink); }
+.btn:focus-visible, .x:focus-visible { outline: 2.5px solid var(--orange); outline-offset: 2px; }
+.sites { list-style: none; margin: 14px 0 0; padding: 0; }
+.sites li { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid var(--sand); }
+.sites .host { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.sites .pct { font: 800 16px "Bricolage", sans-serif; min-width: 52px; text-align: right; }
+.sites .pct.up { color: var(--orange); }
+.sites .flags { color: var(--soft); font-size: 12px; min-width: 70px; }
+.x { border: 0; background: var(--sand); width: 30px; height: 30px; border-radius: 50%; cursor: pointer; color: var(--ink); font-size: 16px; line-height: 1; }
+.x:hover { background: var(--sand-2); }
+.empty { padding-top: 8px; }
+kbd { display: inline-block; padding: 1px 6px; border-radius: 5px; background: var(--sand); color: var(--ink); font: 600 12px "Onest", sans-serif; }
