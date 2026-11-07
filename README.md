@@ -17,7 +17,8 @@
 
 ## Qué hace
 
-- **Hasta 600 %** de volumen en YouTube, Netflix, Twitch, Facebook, Spotify Web y casi cualquier sitio con `<video>` o `<audio>`.
+- **Hasta 600 %** de volumen en YouTube, Netflix, Twitch, Facebook, Spotify Web y casi cualquier sitio con audio.
+- **Reproductores incrustados y de servicios externos:** detecta los que se cargan después de abrir la página, los que vienen de otro dominio o CDN, los que están dentro de componentes (shadow DOM) y los que usan Web Audio.
 - **Limitador** que evita que el sonido sature al subirlo.
 - **Refuerzo de graves** de +8 dB con un clic.
 - **Memoria por sitio:** cada página recuerda su propio volumen. Las páginas nuevas empiezan en 100 %.
@@ -58,13 +59,13 @@ Puedes cambiarlos en `chrome://extensions/shortcuts`.
 
 ## Limitaciones
 
-- **Videos servidos desde otro dominio sin permisos CORS** no se pueden amplificar. El navegador no lo permite. Ducky los detecta y los deja sonar a volumen normal en vez de silenciarlos.
+- **Videos de otro dominio:** Ducky los recarga en modo CORS la primera vez que los amplificas (puede notarse un corte de medio segundo). Si el servidor lo rechaza, el video sigue sonando a volumen normal.
 - **Páginas internas del navegador** (`chrome://`, Chrome Web Store) no admiten extensiones.
 - La amplificación empieza después de tu primer clic o tecla en la página, por las reglas de reproducción automática del navegador.
 
 ## Cómo funciona
 
-Ducky enruta cada `<video>` y `<audio>` por una sola cadena de Web Audio compartida en cada frame:
+Ducky enruta cada `<video>`, `<audio>` y la salida de Web Audio de la página por una cadena de Web Audio en cada frame:
 
 ```
 medios de la página → graves (lowshelf 180 Hz) → ganancia → limitador → altavoces
@@ -75,8 +76,9 @@ medios de la página → graves (lowshelf 180 Hz) → ganancia → limitador →
 
 ```
 ├── manifest.json     Permisos, íconos y atajos
-├── content.js        Motor de audio (se inyecta en cada página)
-├── background.js     Insignia con el porcentaje y atajos de teclado
+├── engine.js         Motor de audio (corre dentro de cada página y sus iframes)
+├── content.js        Puente entre el motor y la extensión (ajustes, medidor)
+├── background.js     Insignia, atajos y permiso CORS para videos de otro dominio
 ├── popup.html        Interfaz
 ├── popup.css         Estilos
 ├── popup.js          Lógica de la interfaz y medidor
@@ -93,6 +95,7 @@ medios de la página → graves (lowshelf 180 Hz) → ganancia → limitador →
 | `storage`                    | Guardar el volumen de cada sitio en tu navegador    |
 | `activeTab`                  | Saber en qué sitio estás al abrir la ventana        |
 | `host_permissions: <all_urls>` | Poder amplificar el audio en cualquier página     |
+| `declarativeNetRequestWithHostAccess` | Permitir amplificar videos de otro dominio. Solo en la pestaña y el sitio que estás amplificando, y se borra al cerrarla |
 
 Ducky no recopila datos ni se conecta a ningún servidor. Todo queda en tu navegador.
 
