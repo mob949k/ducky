@@ -24,7 +24,7 @@
 - **Memoria por sitio:** cada página recuerda su propio volumen. Las páginas nuevas empiezan en 100 %.
 - **Medidor en vivo:** el círculo detrás del pato late con el audio y se pone rojo si satura.
 - **Atajos de teclado** desde cualquier pestaña.
-- **Ligera:** no toca el audio de la página mientras estés en 100 %, y se pone en reposo cuando no suena nada.
+- **Ligera:** no toca el audio mientras estés en 100 %, ignora las vistas previas silenciadas, no deja temporizadores en frames sin audio y se pone en reposo cuando no suena nada.
 
 ## Instalación
 
@@ -95,7 +95,7 @@ medios de la página → graves (lowshelf 180 Hz) → ganancia → limitador →
 | `storage`                    | Guardar el volumen de cada sitio en tu navegador    |
 | `activeTab`                  | Saber en qué sitio estás al abrir la ventana        |
 | `host_permissions: <all_urls>` | Poder amplificar el audio en cualquier página     |
-| `declarativeNetRequestWithHostAccess` | Permitir amplificar videos de otro dominio. Solo en la pestaña y el sitio que estás amplificando, y se borra al cerrarla |
+| `declarativeNetRequestWithHostAccess` | Permitir amplificar videos de otro dominio. Solo en la pestaña y el sitio que estás amplificando, sin cookies, nunca hacia tu red local, y se borra al cerrar la pestaña o cambiar de sitio |
 
 Ducky no recopila datos ni se conecta a ningún servidor. Todo queda en tu navegador.
 

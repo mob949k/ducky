@@ -1,4 +1,4 @@
-// engine.js — Ducky 3.2 · motor de audio (corre en el "mundo" de la página)
+// engine.js — Ducky 3.3 · motor de audio (corre en el "mundo" de la página)
 //
 // Corre dentro de la página para poder ver todos los reproductores:
 //  · <video>/<audio> normales, los que están dentro de componentes
@@ -40,6 +40,7 @@
   const nLoad = MEDIA.load;
   const nAttachShadow = Element.prototype.attachShadow;
   const nAdd = EventTarget.prototype.addEventListener;
+  const nRemove = EventTarget.prototype.removeEventListener;
   const nDispatch = EventTarget.prototype.dispatchEvent;
   const nCreateGain = BAC.createGain;
   const nCreateBiquad = BAC.createBiquadFilter;
@@ -70,6 +71,8 @@
   //   entrada → graves → ganancia → limitador → altavoces (+ analizador)
 
   const chains = new Set();
+  let meterTimer = null;
+  let meterUntil = 0;
 
   function makeChain(ctx, page) {
     const c = {
@@ -93,6 +96,7 @@
     nConnect.call(c.bass, c.gain);
     nConnect.call(c.gain, c.comp);
     chains.add(c);
+    ensureSweep();
     route(c);
     return c;
   }
@@ -110,18 +114,30 @@
       const dest = getDest.call(c.ctx);
       cut(c.input);
       cut(c.comp);
+      c.tapped = false;
       if (want) {
         nConnect.call(c.input, c.bass);
         nConnect.call(c.comp, dest);
-        nConnect.call(c.comp, c.analyser);
       } else {
         nConnect.call(c.input, dest);
-        nConnect.call(c.input, c.analyser);
       }
       tune(c, true);
     } else {
       tune(c, false);
     }
+    tap(c, meterTimer !== null);
+  }
+
+  // El analizador solo se conecta mientras el popup está abierto: el resto
+  // del tiempo no gasta CPU.
+  function tap(c, want) {
+    if (c.tapped === want) return;
+    const from = c.active ? c.comp : c.input;
+    try {
+      if (want) nConnect.call(from, c.analyser);
+      else nDisconnect.call(from, c.analyser);
+    } catch (e) {}
+    c.tapped = want;
   }
 
   function tune(c, instant) {
@@ -235,14 +251,19 @@
     return el.crossOrigin !== null;
   }
 
+  // Vistas previas silenciadas (miniaturas que se reproducen al pasar el
+  // ratón, anuncios mudos): no se enganchan ni se recargan hasta que suenen.
+  const audible = (el) => !el.muted && el.volume > 0;
+
   function onMedia(el) {
     if (!(el instanceof HTMLMediaElement)) return;
     seen.add(el);
     watch(el);
+    ensureSweep();
     if (sourceOf.has(el)) {
       reconnect(el);
       wake();
-    } else if (needsGraph()) {
+    } else if (needsGraph() && audible(el)) {
       hook(el);
     }
   }
@@ -253,6 +274,9 @@
     // En el propio elemento: funciona aunque esté en un shadow DOM o fuera
     // de la página.
     on(el, "playing", () => onMedia(el));
+    on(el, "volumechange", () => {
+      if (!el.paused) onMedia(el);
+    });
     on(el, "pause", scheduleIdle);
     on(el, "ended", scheduleIdle);
   }
@@ -351,6 +375,7 @@
       timer: setT(() => endSwap(el), 10000),
     };
     swapping.set(el, rec);
+    if (swaps++ === 0) guards(true);
 
     // Para elementos en shadow DOM o fuera de la página, que window no ve.
     SWAP_EVENTS.forEach((type) =>
@@ -360,7 +385,9 @@
     );
 
     try {
-      el.crossOrigin = "use-credentials";
+      // Sin cookies: la página no puede usar este permiso para leer
+      // contenido privado de otro sitio en el que hayas iniciado sesión.
+      el.crossOrigin = "anonymous";
       nLoad.call(el);
     } catch (e) {
       endSwap(el);
@@ -412,19 +439,25 @@
     clearT(rec.timer);
     swapping.delete(el);
     corsBusy.delete(el);
+    if (--swaps === 0) guards(false);
     if (!rec.ok) blocked.add(el);
   }
 
-  // Se registra antes que cualquier oyente de la página (document_start).
-  SWAP_EVENTS.forEach((type) =>
-    on(window, type, (e) => {
-      const el = e.target;
-      if (!swapping.has(el)) return;
-      guarded.add(e);
-      swapEvent(el, type);
-      e.stopImmediatePropagation();
-    }, true)
-  );
+  // Los oyentes en window solo existen mientras hay una recarga en curso,
+  // para no ejecutar nada en cada "timeupdate" del resto del tiempo.
+  let swaps = 0;
+  const swapGuard = (e) => {
+    const el = e.target;
+    if (!swapping.has(el)) return;
+    guarded.add(e);
+    swapEvent(el, e.type);
+    e.stopImmediatePropagation();
+  };
+  function guards(onoff) {
+    SWAP_EVENTS.forEach((type) =>
+      (onoff ? nAdd : nRemove).call(window, type, swapGuard, true)
+    );
+  }
 
   // ----------------------------------------------- detectar reproducción
 
@@ -503,7 +536,7 @@
     chains.forEach(route);
     if (needsGraph()) {
       allMedia().forEach((el) => {
-        if (!el.paused || sourceOf.has(el)) {
+        if (sourceOf.has(el) || (!el.paused && audible(el))) {
           watch(el);
           hook(el);
         }
@@ -532,7 +565,14 @@
     }, 60000);
   }
 
-  setI(() => {
+  // La limpieza periódica solo corre en frames con audio: los iframes de
+  // anuncios y widgets no tienen ningún temporizador activo.
+  let sweepTimer = null;
+  function ensureSweep() {
+    if (!sweepTimer) sweepTimer = setI(sweep, 20000);
+  }
+
+  function sweep() {
     for (const el of seen) {
       if (!el.isConnected && el.paused) {
         seen.delete(el);
@@ -546,7 +586,11 @@
       if (c.ctx.state === "closed") chains.delete(c);
     }
     if (!anyPlaying()) scheduleIdle();
-  }, 20000);
+    if (!seen.size && !chains.size) {
+      clearI(sweepTimer);
+      sweepTimer = null;
+    }
+  }
 
   // ----------------------------------------------------------- medición
 
@@ -572,7 +616,7 @@
   function peak() {
     let max = 0;
     for (const c of chains) {
-      if (c.ctx.state !== "running") continue;
+      if (c.ctx.state !== "running" || !c.tapped) continue;
       if (!c.page && !anyPlaying()) continue;
       c.analyser.getFloatTimeDomainData(c.buf);
       for (let i = 0; i < c.buf.length; i += 2) {
@@ -583,9 +627,6 @@
     return Math.min(max, 1);
   }
 
-  let meterTimer = null;
-  let meterUntil = 0;
-
   function startMeter() {
     meterUntil = Date.now() + 2500;
     if (meterTimer) return;
@@ -593,10 +634,12 @@
       if (Date.now() > meterUntil) {
         clearI(meterTimer);
         meterTimer = null;
+        chains.forEach((c) => tap(c, false));
         return;
       }
       emit({ t: "status", peak: peak(), ...status() });
     }, 120);
+    chains.forEach((c) => tap(c, true));
   }
 
   // ------------------------------------------------------------- puente
@@ -626,17 +669,20 @@
   }
 
   on(window, "ducky:cmd", (e) => {
+    const d = e.detail;
+    if (typeof d !== "string" || d.length > 1000) return;
     let m;
     try {
-      m = parse(e.detail);
+      m = parse(d);
     } catch (err) {
       return;
     }
-    if (!m) return;
+    if (!m || typeof m !== "object") return;
     if (m.t === "settings") {
-      Object.assign(state, DEFAULTS, m.s || {});
-      state.gain = Math.max(0, Math.min(6, Number(state.gain) || 0));
-      state.boost = Math.max(0, Math.min(12, Number(state.boost) || 0));
+      const s = m.s && typeof m.s === "object" ? m.s : {};
+      state.gain = Math.max(0, Math.min(6, Number(s.gain ?? 1) || 0));
+      state.boost = Math.max(0, Math.min(12, Number(s.boost) || 0));
+      state.limiter = s.limiter !== false;
       apply();
     } else if (m.t === "meter") {
       startMeter();

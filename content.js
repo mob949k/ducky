@@ -1,4 +1,4 @@
-// content.js — Ducky 3.2 · puente entre la página y la extensión
+// content.js — Ducky 3.3 · puente entre la página y la extensión
 // El audio lo maneja engine.js dentro de la página. Este script lee los
 // ajustes guardados, se los pasa al motor, reenvía el medidor al popup y
 // pide a background.js el permiso CORS para videos de otro dominio.
@@ -15,6 +15,10 @@
 
   let settings = null;
   let dead = false;
+  let meterUntil = 0; // el popup pidió el medidor hace poco
+  let lastCors = 0;
+  let corsCount = 0;
+  const MAX_CORS = 20; // pedidos de permiso por frame
 
   // Los iframes (p. ej. un reproductor incrustado) usan el ajuste del sitio
   // que estás viendo, no el del dominio del iframe.
@@ -63,19 +67,24 @@
     window.dispatchEvent(new CustomEvent("ducky:cmd", { detail: JSON.stringify(msg) }));
   }
 
+  // Este canal también lo puede usar la página, así que todo lo que llega
+  // se valida y se limita.
   window.addEventListener("ducky:evt", (e) => {
+    const d = e.detail;
+    if (typeof d !== "string" || d.length > 1000 || dead) return;
     let m;
     try {
-      m = JSON.parse(e.detail);
+      m = JSON.parse(d);
     } catch (err) {
       return;
     }
-    if (!m) return;
+    if (!m || typeof m !== "object") return;
 
     if (m.t === "hello") {
       if (settings) toEngine({ t: "settings", s: settings });
     } else if (m.t === "status") {
-      // Frames sin medios (anuncios, widgets) no envían nada.
+      // Solo mientras el popup está abierto; frames sin medios no envían nada.
+      if (Date.now() > meterUntil) return;
       if (!IS_TOP && !m.total) return;
       send({
         type: "METER",
@@ -85,11 +94,17 @@
         failed: m.failed | 0,
       });
     } else if (m.t === "cors" && typeof m.origin === "string" && typeof m.host === "string") {
-      // Solo para el origen real de este frame.
-      if (m.origin !== location.origin) {
+      // Solo para el origen real de este frame, solo si estás amplificando
+      // y con un límite de pedidos para que la página no pueda abusar.
+      const now = Date.now();
+      const amped = settings && (settings.gain > 1.005 || settings.boost > 0);
+      if (m.origin !== location.origin || !amped || corsCount >= MAX_CORS ||
+          now - lastCors < 300 || !/^[a-z0-9.-]{1,253}$/i.test(m.host)) {
         toEngine({ t: "reply", id: m.id, ok: false });
         return;
       }
+      lastCors = now;
+      corsCount++;
       const sent = send({ type: "CORS", origin: location.origin, host: m.host, site: SITE }, (res) =>
         toEngine({ t: "reply", id: m.id, ok: !!(res && res.ok) })
       );
@@ -100,9 +115,14 @@
   // ------------------------------------------------------------ ajustes
 
   function setSettings(saved) {
-    settings = { gain: 1, boost: 0, limiter: true, ...(saved || {}) };
+    const s = saved && typeof saved === "object" ? saved : {};
+    settings = {
+      gain: Math.max(0, Math.min(6, Number(s.gain ?? 1) || 0)),
+      boost: Math.max(0, Math.min(12, Number(s.boost) || 0)),
+      limiter: s.limiter !== false,
+    };
     toEngine({ t: "settings", s: settings });
-    if (IS_TOP) send({ type: "BADGE", gain: Number(settings.gain) || 0 });
+    if (IS_TOP) send({ type: "BADGE", gain: settings.gain });
   }
 
   try {
@@ -119,6 +139,7 @@
     chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       if (!msg || !alive()) return;
       if (msg.type === "METER_ON") {
+        meterUntil = Date.now() + 3000;
         toEngine({ t: "meter" });
         sendResponse({ ok: true });
       }

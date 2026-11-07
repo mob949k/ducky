@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Ducky — Volumen Extra",
   "short_name": "Ducky",
-  "version": "3.2",
+  "version": "3.3",
   "description": "Sube el audio de cualquier video o página hasta 600 %, con limitador anti-distorsión, refuerzo de graves y memoria por sitio.",
   "permissions": [
     "storage",

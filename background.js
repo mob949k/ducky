@@ -1,11 +1,29 @@
-// background.js — Ducky 3.2
+// background.js — Ducky 3.3
 // Insignia con el porcentaje, atajos de teclado y permiso CORS temporal
 // para amplificar videos servidos desde otro dominio.
 
 const DEFAULTS = { gain: 1, boost: 0, limiter: true };
 const STEP = 0.25;
 const MAX = 6;
-const MAX_RULES = 200;
+const MAX_RULES = 200; // en total
+const MAX_TAB_RULES = 20; // por pestaña
+
+// Direcciones locales o de red privada (router, cámaras, NAS, localhost).
+function isPrivate(host) {
+  host = host.replace(/^\[|\]$/g, "").toLowerCase();
+  if (host === "localhost" || /\.(localhost|local|internal|lan|home\.arpa)$/.test(host)) return true;
+  const v4 = host.match(/^(\d+)\.(\d+)\.(\d+)\.(\d+)$/);
+  if (v4) {
+    const [a, b] = [Number(v4[1]), Number(v4[2])];
+    return a === 10 || a === 127 || a === 0 || (a === 169 && b === 254) ||
+      (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168) ||
+      (a === 100 && b >= 64 && b <= 127);
+  }
+  if (host.includes(":")) {
+    return host === "::1" || host === "::" || /^f[cd]/.test(host) || /^fe[89ab]/.test(host);
+  }
+  return false;
+}
 
 function hostOf(url) {
   try {
@@ -51,6 +69,8 @@ async function allowCors(tabId, origin, host) {
   const rules = await chrome.declarativeNetRequest.getSessionRules();
   if (rules.some((r) => r.id === id)) return true;
 
+  const mine = rules.filter((r) => r.condition.tabIds && r.condition.tabIds.includes(tabId));
+  if (mine.length >= MAX_TAB_RULES) return false;
   const removeRuleIds = rules.length >= MAX_RULES ? [rules[0].id] : [];
   await chrome.declarativeNetRequest.updateSessionRules({
     removeRuleIds,
@@ -60,9 +80,10 @@ async function allowCors(tabId, origin, host) {
         priority: 1,
         action: {
           type: "modifyHeaders",
+          // Sin "allow-credentials": el video se pide sin cookies, así que
+          // la página no puede leer contenido privado de otro sitio.
           responseHeaders: [
             { header: "access-control-allow-origin", operation: "set", value: origin },
-            { header: "access-control-allow-credentials", operation: "set", value: "true" },
           ],
         },
         condition: {
@@ -101,29 +122,52 @@ async function handleCors(msg, sender) {
   }
 
   const host = String(msg.host || "").toLowerCase();
-  if (!/^[a-z0-9.-]+$/.test(host)) return false;
+  if (!/^[a-z0-9.-]{1,253}$/.test(host)) return false;
 
+  // Un sitio público no puede pedir permiso sobre tu red local.
+  if (isPrivate(host) && !isPrivate(new URL(origin).hostname)) return false;
+
+  await rememberSite(tab.id, site);
   return allowCors(tab.id, origin, host);
 }
 
-chrome.tabs.onRemoved.addListener(async (tabId) => {
+// Los permisos se borran al cerrar la pestaña o al cambiar de sitio.
+async function clearTab(tabId) {
   try {
     const rules = await chrome.declarativeNetRequest.getSessionRules();
     const ids = rules
       .filter((r) => r.condition.tabIds && r.condition.tabIds.includes(tabId))
       .map((r) => r.id);
     if (ids.length) await chrome.declarativeNetRequest.updateSessionRules({ removeRuleIds: ids });
+    await chrome.storage.session.remove(`tab:${tabId}`);
+  } catch (e) {}
+}
+
+async function rememberSite(tabId, site) {
+  try {
+    await chrome.storage.session.set({ [`tab:${tabId}`]: site });
+  } catch (e) {}
+}
+
+chrome.tabs.onRemoved.addListener(clearTab);
+
+chrome.tabs.onUpdated.addListener(async (tabId, info) => {
+  if (!info.url) return;
+  try {
+    const key = `tab:${tabId}`;
+    const data = await chrome.storage.session.get(key);
+    if (data[key] && data[key] !== hostOf(info.url)) clearTab(tabId);
   } catch (e) {}
 });
 
 // ------------------------------------------------------------- mensajes
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
-  if (!msg) return;
+  if (!msg || typeof msg !== "object" || sender.id !== chrome.runtime.id) return;
 
   if (msg.type === "BADGE" && sender.tab && sender.tab.id !== undefined &&
       sender.frameId === 0) {
-    setBadge(sender.tab.id, Number(msg.gain) || 0);
+    setBadge(sender.tab.id, Math.max(0, Math.min(MAX, Number(msg.gain) || 0)));
     return;
   }
 
