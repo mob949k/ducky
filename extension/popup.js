@@ -1,4 +1,4 @@
-// popup.js — Ducky 3.1
+// popup.js — Ducky 3.4
 
 const DEFAULTS = { gain: 1, boost: 0, limiter: true };
 const BOOST_DB = 8;
@@ -13,6 +13,7 @@ const el = {
   duck: $("duck"),
   pulse: $("pulse"),
   value: $("value"),
+  num: null,
   slider: $("slider"),
   up: $("up"),
   down: $("down"),
@@ -26,6 +27,16 @@ const el = {
 let tabId = null;
 let siteKey = null;
 let settings = { ...DEFAULTS };
+
+// Valores guardados: siempre dentro de rango, aunque estén dañados.
+function clean(saved) {
+  const s = saved && typeof saved === "object" ? saved : {};
+  return {
+    gain: Math.max(0, Math.min(6, Number(s.gain ?? 1) || 0)),
+    boost: s.boost > 0 ? BOOST_DB : 0,
+    limiter: s.limiter !== false,
+  };
+}
 let saveTimer = null;
 let shownPeak = 0;
 
@@ -41,7 +52,8 @@ const pctNow = () => Math.round(settings.gain * 100);
 
 function render() {
   const pct = pctNow();
-  el.value.innerHTML = `${pct}<small>%</small>`;
+  // Sin innerHTML: solo nodos de texto.
+  if (el.num.data !== String(pct)) el.num.data = String(pct);
   el.slider.value = pct;
   el.slider.style.setProperty("--fill", `${(pct / MAX) * 100}%`);
   el.app.classList.toggle("amped", pct > 100);
@@ -84,10 +96,10 @@ function note(total, ok, failed) {
   let text = "";
   const amped = settings.gain > 1 || settings.boost > 0;
 
-  if (!supported) text = "Chrome no permite extensiones en esta página.";
-  else if (!reachable) text = "Recarga la página para activar Ducky.";
-  else if (amped && failed > 0) text = "Un video de otro sitio no se puede amplificar.";
-  else if (amped && total > 0 && ok === 0) text = "Dale play para amplificar.";
+  if (!supported) text = "Chrome doesn't allow extensions on this page.";
+  else if (!reachable) text = "Reload the page to turn on Ducky.";
+  else if (amped && failed > 0) text = "A video from another site can't be boosted.";
+  else if (amped && total > 0 && ok === 0) text = "Press play to boost.";
 
   el.note.hidden = !text;
   if (el.note.textContent !== text) el.note.textContent = text;
@@ -184,6 +196,8 @@ function hostOf(url) {
   }
 }
 
+el.num = document.createTextNode("100");
+el.value.replaceChildren(el.num, Object.assign(document.createElement("small"), { textContent: "%" }));
 render();
 
 chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -194,8 +208,8 @@ chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
   const host = hostOf(tab.url || "");
   supported = !!host;
   siteKey = host ? `site:${host}` : null;
-  el.site.textContent = host === "local" ? "Archivo local"
-    : host ? host.replace(/^www\./, "") : "Página del navegador";
+  el.site.textContent = host === "local" ? "Local file"
+    : host ? host.replace(/^www\./, "") : "Browser page";
   el.site.title = host || "";
   el.app.classList.toggle("off", !supported);
 
@@ -206,11 +220,23 @@ chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
   }
 
   chrome.storage.local.get(siteKey, (data) => {
-    settings = { ...DEFAULTS, ...((data && data[siteKey]) || {}) };
+    settings = clean(data && data[siteKey]);
     render();
   });
 
-  pingFrames();
-  setInterval(pingFrames, 900);
-  setInterval(renderLevel, 100);
+  // El medidor se pausa si la ventana no está visible.
+  let timers = [];
+  const startTimers = () => {
+    if (timers.length) return;
+    pingFrames();
+    timers = [setInterval(pingFrames, 900), setInterval(renderLevel, 100)];
+  };
+  const stopTimers = () => {
+    timers.forEach(clearInterval);
+    timers = [];
+  };
+  document.addEventListener("visibilitychange", () =>
+    document.hidden ? stopTimers() : startTimers()
+  );
+  startTimers();
 });

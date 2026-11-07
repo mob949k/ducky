@@ -1,9 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "Ducky — Volumen Extra",
+  "name": "Ducky — Volume Booster",
   "short_name": "Ducky",
-  "version": "3.3",
-  "description": "Sube el audio de cualquier video o página hasta 600 %, con limitador anti-distorsión, refuerzo de graves y memoria por sitio.",
+  "version": "3.4",
+  "description": "Boost any video or tab up to 600%, with a distortion limiter, bass boost and per-site memory.",
   "permissions": [
     "storage",
     "activeTab",
@@ -63,19 +63,23 @@
       "suggested_key": {
         "default": "Alt+Shift+Up"
       },
-      "description": "Subir 25 %"
+      "description": "Volume up 25%"
     },
     "volume-down": {
       "suggested_key": {
         "default": "Alt+Shift+Down"
       },
-      "description": "Bajar 25 %"
+      "description": "Volume down 25%"
     },
     "volume-reset": {
       "suggested_key": {
         "default": "Alt+Shift+0"
       },
-      "description": "Volver a 100 %"
+      "description": "Reset to 100%"
     }
-  }
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'none'; base-uri 'none'"
+  },
+  "minimum_chrome_version": "119"
 }

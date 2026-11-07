@@ -1,0 +1,53 @@
+# Builds ducky.zip from the extension/ folder and publishes it as a GitHub
+# Release whenever a version tag (v3.4, v3.5, ...) is pushed.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check that the tag matches manifest.json
+        if: github.event_name == 'push'
+        run: |
+          VERSION=$(jq -r .version extension/manifest.json)
+          if [ "v$VERSION" != "$GITHUB_REF_NAME" ]; then
+            echo "Tag $GITHUB_REF_NAME does not match manifest version $VERSION" >&2
+            exit 1
+          fi
+
+      - name: Build ducky.zip
+        run: cd extension && zip -r -X ../ducky.zip . -x '.*'
+
+      - name: Release notes from CHANGELOG.md
+        run: |
+          VERSION=$(jq -r .version extension/manifest.json)
+          awk -v v="## $VERSION" '$0 ~ "^## " { p = index($0, v) == 1 } p' CHANGELOG.md | tail -n +2 > notes.md
+          cat >> notes.md <<'NOTES'
+
+          ### Install
+          1. Download **ducky.zip** below and unzip it.
+          2. Open `chrome://extensions`, turn on **Developer mode**.
+          3. Click **Load unpacked** and choose the unzipped folder.
+          NOTES
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION=$(jq -r .version extension/manifest.json)
+          TAG="v$VERSION"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" ducky.zip --clobber
+          else
+            gh release create "$TAG" ducky.zip --title "Ducky $VERSION" --notes-file notes.md
+          fi

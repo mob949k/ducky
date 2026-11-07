@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
 <meta charset="UTF-8" />
 <title>Ducky</title>
@@ -26,9 +26,9 @@
       <div class="bar">
         <div>
           <h1>Ducky</h1>
-          <span class="site" id="site">esta página</span>
+          <span class="site" id="site">this page</span>
         </div>
-        <button class="round" id="reset" title="Volver a 100 %" aria-label="Volver a 100 %">
+        <button class="round" id="reset" title="Reset to 100%" aria-label="Reset to 100%">
           <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
             <path d="M4 12a8 8 0 1 0 2.4-5.7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
             <path d="M4 3.5v4.2h4.2" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -45,22 +45,22 @@
 
     <section class="sheet">
       <div class="stepper">
-        <button class="step" id="down" aria-label="Bajar 25 %">
+        <button class="step" id="down" aria-label="Down 25%">
           <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 12h12" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
         </button>
         <output class="value" id="value">100<small>%</small></output>
-        <button class="step" id="up" aria-label="Subir 25 %">
+        <button class="step" id="up" aria-label="Up 25%">
           <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 12h12M12 6v12" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
         </button>
       </div>
 
       <div class="track">
         <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/></svg>
-        <input type="range" id="slider" min="0" max="600" step="5" value="100" aria-label="Volumen" />
+        <input type="range" id="slider" min="0" max="600" step="5" value="100" aria-label="Volume" />
         <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9.5h3.5L11 5.5v13l-4.5-4H3z" fill="currentColor"/><path d="M14.5 9a4 4 0 0 1 0 6M17 6.5a7.5 7.5 0 0 1 0 11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
       </div>
 
-      <div class="chips" role="group" aria-label="Niveles rápidos">
+      <div class="chips" role="group" aria-label="Quick levels">
         <button class="chip" data-val="100">100</button>
         <button class="chip" data-val="200">200</button>
         <button class="chip" data-val="300">300</button>
@@ -68,13 +68,13 @@
       </div>
 
       <div class="toggles">
-        <button class="toggle" id="limiter" aria-pressed="true" title="Evita que el audio se distorsione al subirlo">
+        <button class="toggle" id="limiter" aria-pressed="true" title="Keeps loud audio from distorting">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5 5 6v5.5c0 4.3 3 7.6 7 9 4-1.4 7-4.7 7-9V6z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
-          Limitador
+          Limiter
         </button>
-        <button class="toggle" id="boost" aria-pressed="false" title="+8 dB en los graves">
+        <button class="toggle" id="boost" aria-pressed="false" title="+8 dB on low frequencies">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12c2-6 4-6 6 0s4 6 6 0 4-6 6 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-          Graves
+          Bass Boost
         </button>
       </div>
 
