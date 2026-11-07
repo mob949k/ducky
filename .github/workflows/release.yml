@@ -1,11 +1,18 @@
 # Builds ducky.zip from the extension/ folder and publishes it as a GitHub
-# Release whenever a version tag (v3.4, v3.5, ...) is pushed.
+# Release. Runs on every push to main that touches the extension: if the
+# version in manifest.json has no release yet, it creates v<version>;
+# if it already exists, it refreshes the zip.
 name: Release
 
 on:
   push:
-    tags: ["v*"]
+    branches: [main]
+    paths: ["extension/**", "CHANGELOG.md", ".github/workflows/release.yml"]
   workflow_dispatch:
+
+concurrency:
+  group: release
+  cancel-in-progress: false
 
 permissions:
   contents: write
@@ -15,15 +22,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Check that the tag matches manifest.json
-        if: github.event_name == 'push'
-        run: |
-          VERSION=$(jq -r .version extension/manifest.json)
-          if [ "v$VERSION" != "$GITHUB_REF_NAME" ]; then
-            echo "Tag $GITHUB_REF_NAME does not match manifest version $VERSION" >&2
-            exit 1
-          fi
 
       - name: Build ducky.zip
         run: cd extension && zip -r -X ../ducky.zip . -x '.*'
@@ -49,5 +47,5 @@ jobs:
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" ducky.zip --clobber
           else
-            gh release create "$TAG" ducky.zip --title "Ducky $VERSION" --notes-file notes.md
+            gh release create "$TAG" ducky.zip --title "Ducky $VERSION" --notes-file notes.md --target "$GITHUB_SHA" --latest
           fi

@@ -135,7 +135,7 @@ page audio → bass (low-shelf 180 Hz) → gain → limiter → speakers
 
 **Run from source:** clone the repo and load the `extension/` folder with **Load unpacked**.
 
-**Publish a release:** bump `version` in `extension/manifest.json`, add a section to `CHANGELOG.md`, then push a tag `v<version>`. GitHub Actions builds `ducky.zip` and attaches it to the release.
+**Publish a release:** bump `version` in `extension/manifest.json`, add a section to `CHANGELOG.md` and push to `main`. GitHub Actions builds `ducky.zip` and publishes release `v<version>` automatically.
 
 ## Changelog
 
